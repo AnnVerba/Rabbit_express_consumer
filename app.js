@@ -18,18 +18,18 @@ amqp.connect('amqp://localhost:5672', function(error0, connection) {
     channel.assertExchange("exchange1", 'topic', {
       durable: true
     });
-    channel.bindQueue('hello','hello','user.info#')
+
     channel.assertQueue(queue, {
       durable: false
-    }, function(error2, q) {
+    });
       channel.prefetch(1);
       console.log(" [*] Waiting for messages in %s. To exit press CTRL+C", queue);
 
       args.forEach(function(key) {
-        channel.bindQueue(q.queue, 'exchange', key);
+        channel.bindQueue('hello', 'exchange1', key);
       });
       channel.consume(queue, function(msg) {
-        console.log(" [x] Received %s", msg.fields.routingKey,msg.content.toString());
+        console.log(" [x] Received %s",msg.content.toString());
         channel.sendToQueue('hello', Buffer.from(msg.content.toString()), {
           replyTo: 'hello'
         });
@@ -38,6 +38,6 @@ amqp.connect('amqp://localhost:5672', function(error0, connection) {
       });
     });
   });
-});
+
 
 module.exports = app;
