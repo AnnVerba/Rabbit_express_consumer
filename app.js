@@ -1,10 +1,8 @@
-var createError = require('http-errors');
-var express = require('express');
-var app = express();
-var amqp = require('amqplib/callback_api');
+const createError = require('http-errors');
+const express = require('express');
+const app = express();
+const amqp = require('amqplib/callback_api');
 
-
-var args=process.argv.slice(2)
 amqp.connect('amqp://localhost:5672', function(error0, connection) {
   if (error0) {
     throw error0;
@@ -14,29 +12,34 @@ amqp.connect('amqp://localhost:5672', function(error0, connection) {
       throw error1;
     }
 
-    var queue = 'hello';
+    const queue = 'hello';
     channel.assertExchange("exchange1", 'topic', {
       durable: true
     });
 
     channel.assertQueue(queue, {
-      durable: false
+      durable:true
     });
-      channel.prefetch(1);
+    channel.assertQueue('replay', {
+      durable: true
+    });
+
+
       console.log(" [*] Waiting for messages in %s. To exit press CTRL+C", queue);
 
-      args.forEach(function(key) {
-        channel.bindQueue('hello', 'exchange1', key);
-      });
+      channel.bindQueue(queue, 'exchange1', 'user.info');
+
       channel.consume(queue, function(msg) {
         console.log(" [x] Received %s",msg.content.toString());
-        channel.sendToQueue('hello', Buffer.from(msg.content.toString()), {
-          replyTo: 'hello'
-        });
-      }, {
+            channel.publish('exchange1','replay',Buffer.from(msg.content.toString()),);
+       },
+         {
         noAck: true
       });
-    });
+
+
+  });
+
   });
 
 
